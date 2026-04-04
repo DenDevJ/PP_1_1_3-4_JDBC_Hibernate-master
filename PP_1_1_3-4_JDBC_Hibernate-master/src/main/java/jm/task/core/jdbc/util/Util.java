@@ -1,11 +1,10 @@
 package jm.task.core.jdbc.util;
 
-import org.hibernate.SessionFactory;
-import org.hibernate.cfg.Configuration;
-import org.hibernate.cfg.Environment;
-import jm.task.core.jdbc.model.User;
+import jm.task.core.jdbc.model.*;
+import org.hibernate.*;
+import org.hibernate.cfg.*;
 
-import java.util.Properties;
+import java.util.*;
 
 public class Util {
 
