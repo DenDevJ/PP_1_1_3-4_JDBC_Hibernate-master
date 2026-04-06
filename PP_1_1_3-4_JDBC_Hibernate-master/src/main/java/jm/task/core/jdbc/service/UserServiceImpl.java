@@ -9,8 +9,6 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
 
     private UserDao userDao = new UserDaoHibernateImpl(); // ← используем Hibernate
-
-    // или через конструктор
     public UserServiceImpl() {
         this.userDao = new UserDaoHibernateImpl();
     }
