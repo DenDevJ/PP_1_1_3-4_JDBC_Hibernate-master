@@ -1,11 +1,12 @@
 package jm.task.core.jdbc.dao;
 
-import jm.task.core.jdbc.model.*;
-import jm.task.core.jdbc.util.*;
-import org.hibernate.*;
+import jm.task.core.jdbc.model.User;
+import jm.task.core.jdbc.util.Util;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 
-import java.util.*;
+import java.util.List;
 
 public class UserDaoHibernateImpl implements UserDao {
 
@@ -15,39 +16,25 @@ public class UserDaoHibernateImpl implements UserDao {
 
     @Override
     public void createUsersTable() {
-        String sql = "CREATE TABLE IF NOT EXISTS users (" +
-                "id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, " +
-                "name VARCHAR(50) NOT NULL, " +
-                "last_name VARCHAR(50) NOT NULL, " +
-                "age TINYINT NOT NULL" +
-                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-
-        Transaction transaction = null;
-        try (Session session = Util.getSessionFactory().openSession()) {
-            transaction = session.beginTransaction();
-            Query query = session.createNativeQuery(sql);
-            query.executeUpdate();
-            transaction.commit();
-            System.out.println("Таблица users создана или уже существует");
-        } catch (Exception e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
-            e.printStackTrace();
-        }
+        // При использовании Hibernate таблица создаётся автоматически
+        // через настройку hibernate.hbm2ddl.auto = "update"
+        // Этот метод можно оставить пустым или удалить
+        System.out.println("Таблица создаётся автоматически через Hibernate (hbm2ddl.auto=update)");
     }
 
     @Override
     public void dropUsersTable() {
-        String sql = "DROP TABLE IF EXISTS users";
-
         Transaction transaction = null;
         try (Session session = Util.getSessionFactory().openSession()) {
             transaction = session.beginTransaction();
-            Query query = session.createNativeQuery(sql);
-            query.executeUpdate();
+
+            // HQL для удаления всех записей (очистка таблицы)
+            // ВНИМАНИЕ: Hibernate не поддерживает DROP TABLE через HQL
+            // Поэтому здесь используем очистку, а не удаление таблицы
+            session.createQuery("DELETE FROM User").executeUpdate();
+
             transaction.commit();
-            System.out.println("Таблица users удалена или не существовала");
+            System.out.println("Таблица users очищена (Hibernate не поддерживает DROP TABLE через HQL)");
         } catch (Exception e) {
             if (transaction != null) {
                 transaction.rollback();
@@ -61,8 +48,11 @@ public class UserDaoHibernateImpl implements UserDao {
         Transaction transaction = null;
         try (Session session = Util.getSessionFactory().openSession()) {
             transaction = session.beginTransaction();
+
+            // Работа с сущностью User, а не с полями БД
             User user = new User(name, lastName, age);
-            session.save(user);
+            session.persist(user); // JPA-метод, работает с сущностью
+
             transaction.commit();
             System.out.println("User с именем " + name + " добавлен в базу данных");
         } catch (Exception e) {
@@ -78,13 +68,16 @@ public class UserDaoHibernateImpl implements UserDao {
         Transaction transaction = null;
         try (Session session = Util.getSessionFactory().openSession()) {
             transaction = session.beginTransaction();
+
+            // Работа с сущностью User по ID
             User user = session.get(User.class, id);
             if (user != null) {
-                session.delete(user);
+                session.remove(user); // JPA-метод удаления сущности
                 System.out.println("User с id " + id + " удален");
             } else {
                 System.out.println("User с id " + id + " не найден");
             }
+
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) {
@@ -97,11 +90,12 @@ public class UserDaoHibernateImpl implements UserDao {
     @Override
     public List<User> getAllUsers() {
         try (Session session = Util.getSessionFactory().openSession()) {
-            List<User> users = session.createQuery("FROM User", User.class).list();
-            return users;
+            // HQL-запрос к сущности User, а не к таблице users
+            Query<User> query = session.createQuery("SELECT u FROM User u", User.class);
+            return query.list();
         } catch (Exception e) {
             e.printStackTrace();
-            return new ArrayList<>();
+            return List.of();
         }
     }
 
@@ -110,7 +104,10 @@ public class UserDaoHibernateImpl implements UserDao {
         Transaction transaction = null;
         try (Session session = Util.getSessionFactory().openSession()) {
             transaction = session.beginTransaction();
+
+            // HQL для удаления всех сущностей User
             session.createQuery("DELETE FROM User").executeUpdate();
+
             transaction.commit();
             System.out.println("Таблица users очищена");
         } catch (Exception e) {
